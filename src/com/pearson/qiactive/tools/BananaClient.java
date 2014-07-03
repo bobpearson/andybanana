@@ -60,6 +60,11 @@ public class BananaClient {
 			String res = getText("status", "bob");
 			if (res.length() > 0) {
 				par.status(res);
+				try {
+					Thread.sleep(10000);
+				} catch (InterruptedException e) {
+
+				}
 			}
 
 		}
