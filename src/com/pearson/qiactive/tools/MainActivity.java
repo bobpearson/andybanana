@@ -13,6 +13,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 
+
+/**
+ * VirtualBanana core client code
+ */
 public class MainActivity extends Activity {
 
 	private EditText useridText;
@@ -21,6 +25,8 @@ public class MainActivity extends Activity {
 	private Button releaseButton;
 	private final static String APPNAME = "AndyBanana";
 	Bananimator bananimator;
+	AlertDialog userDialog;
+	AlertDialog errorDialog;
 
 	private final static int CANT_GET_BANANA = 0;
 	private final static int HAVE_NO_BANANA = 1;
@@ -52,7 +58,31 @@ public class MainActivity extends Activity {
 		useridText = new EditText(this);
 		useridText.setHint("set your userid here");
 		setUserId("");
-		showUseridDialog();
+		createDialogs();
+		userDialog.show();
+	}
+
+	private void createDialogs() {
+		AlertDialog.Builder bldr1 = new AlertDialog.Builder(this);
+		bldr1.setTitle("Enter user id");
+		bldr1.setMessage("Who wants to take the banana?");
+		bldr1.setView(useridText);
+		bldr1.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+				String id = useridText.getText().toString();
+				setUserId(id);
+			}
+		});
+		bldr1.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+			}
+		});
+		userDialog = bldr1.create();
+
+		AlertDialog.Builder bldr2 = new AlertDialog.Builder(this);
+		bldr2.setTitle("Bad banana");
+		bldr2.setMessage("");
+		errorDialog = bldr2.create();
 	}
 
 	private void setUserId(String id) {
@@ -68,27 +98,28 @@ public class MainActivity extends Activity {
 
 	private void setState(int stateId) {
 		switch (stateId) {
-			case CANT_GET_BANANA :
+			case CANT_GET_BANANA:
+				getButton.setEnabled(false);
+				releaseButton.setEnabled(false);
+				bananimator.stop();
+				break;
+			case HAVE_NO_BANANA:
 				getButton.setEnabled(true);
 				releaseButton.setEnabled(false);
 				bananimator.stop();
 				break;
-			case HAVE_NO_BANANA :
-				getButton.setEnabled(true);
-				releaseButton.setEnabled(false);
-				bananimator.stop();
-				break;
-			case HAVE_BANANA :
+			case HAVE_BANANA:
 				getButton.setEnabled(false);
 				releaseButton.setEnabled(true);
 				bananimator.start();
 				break;
-			case BOGARTING_BANANA :
+			case BOGARTING_BANANA:
 				getButton.setEnabled(false);
 				releaseButton.setEnabled(true);
 				break;
-			default :
+			default:
 		}
+		state = stateId;
 	}
 
 	@Override
@@ -104,9 +135,9 @@ public class MainActivity extends Activity {
 		switch (item.getItemId()) {
 			case R.id.menuitem_userid:
 				if (state == CANT_GET_BANANA || state == HAVE_NO_BANANA) {
-					showUseridDialog();
+					userDialog.show();
 				} else {
-					showErrorDialog("I won't let you change your name whilst holding the banana!");
+					showError("I won't let you change your name whilst holding the banana!");
 				}
 				return true;
 			default:
@@ -115,33 +146,10 @@ public class MainActivity extends Activity {
 	}
 
 
-	void showUseridDialog() {
-		useridText.setText("");
-		AlertDialog.Builder dlg = new AlertDialog.Builder(this);
-		dlg.setTitle("Enter user id");
-		dlg.setMessage("Who wants to take the banana?");
-		dlg.setView(useridText);
-		dlg.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int whichButton) {
-				String id = useridText.getText().toString();
-				setUserId(id);
-			}
-		});
-		dlg.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-			public void onClick(DialogInterface dialog, int whichButton) {
-			}
-		});
-		dlg.show();
+	void showError(String message) {
+		errorDialog.setMessage(message);
+		errorDialog.show();
 	}
-
-
-	void showErrorDialog(String message) {
-		AlertDialog.Builder dlg = new AlertDialog.Builder(this);
-		dlg.setTitle("Bad banana");
-		dlg.setMessage(message);
-		dlg.show();
-	}
-
 
 
 	private void commandGetBanana() {
@@ -154,62 +162,66 @@ public class MainActivity extends Activity {
 	}
 
 
-class Bananimator {
+	/**
+	 *
+	 */
+
+	class Bananimator {
 
 
-	private Handler handler;
-	private final int MILLIS = 100;
-	private int imageIndex;
-    private boolean continueAnimating;
-	private final int imgs[] = {
-			R.drawable.ab0,
-			R.drawable.ab1,
-			R.drawable.ab2,
-			R.drawable.ab3,
-			R.drawable.ab4,
-			R.drawable.ab5,
-			R.drawable.ab6,
-			R.drawable.ab7
-	};
-	ImageView imageView;
+		private Handler handler;
+		private final int MILLIS = 100;
+		private int imageIndex;
+		private boolean continueAnimating;
+		private final int imgs[] = {
+				R.drawable.ab0,
+				R.drawable.ab1,
+				R.drawable.ab2,
+				R.drawable.ab3,
+				R.drawable.ab4,
+				R.drawable.ab5,
+				R.drawable.ab6,
+				R.drawable.ab7
+		};
+		ImageView imageView;
 
-	public Bananimator() {
-		handler = new Handler();
-		imageView = (ImageView) findViewById(R.id.banana_image);
-		continueAnimating = false;
+		public Bananimator() {
+			handler = new Handler();
+			imageView = (ImageView) findViewById(R.id.banana_image);
+			continueAnimating = false;
 
-	}
-
-	public void start() {
-
-		if (continueAnimating) {
-			return;
 		}
 
-		continueAnimating = true;
-		imageIndex = 0;
-		handler.postDelayed(new Runnable() {
+		public void start() {
 
-			@Override
-			public void run() {
-				imageView.setImageResource(imgs[imageIndex]);
-				if (++imageIndex >= 8) {
-					imageIndex = 0;
-				}
-				if (continueAnimating) {
-					handler.postDelayed(this, MILLIS);
-				}
+			if (continueAnimating) {
+				return;
 			}
-		}, MILLIS);
-	}
+
+			continueAnimating = true;
+			imageIndex = 0;
+			handler.postDelayed(new Runnable() {
+
+				@Override
+				public void run() {
+					imageView.setImageResource(imgs[imageIndex]);
+					if (++imageIndex >= 8) {
+						imageIndex = 0;
+					}
+					if (continueAnimating) {
+						handler.postDelayed(this, MILLIS);
+					}
+				}
+			}, MILLIS);
+		}
 
 
-	public void stop() {
-		continueAnimating = false;
-	}
+		public void stop() {
+			continueAnimating = false;
+		}
 
 
-}//Bananimator
+	}//Bananimator
 
 
 }//MainActivity
