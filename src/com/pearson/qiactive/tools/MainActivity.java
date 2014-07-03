@@ -12,6 +12,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
+
 
 
 /**
@@ -20,17 +22,39 @@ import android.widget.ImageView;
 public class MainActivity extends Activity {
 
 	private EditText useridText;
+	private TextView statusText;
 	private String userid;
 	private Button getButton;
 	private Button releaseButton;
 	private final static String APPNAME = "AndyBanana";
-	Bananimator bananimator;
-	AlertDialog userDialog;
-	AlertDialog errorDialog;
+	private Bananimator bananimator;
+	private AlertDialog userDialog;
+	private AlertDialog errorDialog;
+	private BananaClient client;
 
+
+	/**
+	 * Client states
+	 */
+
+	/**
+	 * Client is unable to grab the banana (forgot to set name, etc)
+	 */
 	private final static int CANT_GET_BANANA = 0;
+
+	/**
+	 * Client can grab the banana but currently isn't holding it
+	 */
 	private final static int HAVE_NO_BANANA = 1;
+
+	/**
+	 * Client currently has the banana
+	 */
 	private final static int HAVE_BANANA = 2;
+
+	/**
+	 * Client still has the banana after a long time (20mins?).  Superstate of HAVE_BANANA
+	 */
 	private final static int BOGARTING_BANANA = 3;
 
 	private int state;
@@ -42,7 +66,12 @@ public class MainActivity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
+		statusText = (TextView) findViewById(R.id.status_text);
 		bananimator = new Bananimator();
+		String url = getString(R.string.server_url);
+		client = new BananaClient(this, url);
+		client.addListener(new Listener());
+		client.start();
 		getButton = (Button) findViewById(R.id.banana_get);
 		getButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
@@ -62,6 +91,9 @@ public class MainActivity extends Activity {
 		userDialog.show();
 	}
 
+	/**
+	 * Generate the dialogs once, else you can have multi-parent problems
+	 */
 	private void createDialogs() {
 		AlertDialog.Builder bldr1 = new AlertDialog.Builder(this);
 		bldr1.setTitle("Enter user id");
@@ -85,6 +117,13 @@ public class MainActivity extends Activity {
 		errorDialog = bldr2.create();
 	}
 
+	public void status(String msg) {
+		statusText.setText(msg);
+	}
+
+	/**
+	 * Set the user id to the given string.  If ok, allow banana-grabbing
+	 */
 	private void setUserId(String id) {
 		id = id.trim();
 		if (id.length() > 0) {
@@ -122,6 +161,11 @@ public class MainActivity extends Activity {
 		state = stateId;
 	}
 
+	/**
+	 * Generate our menu
+	 * @param menu
+	 * @return true
+	 */
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
@@ -129,6 +173,11 @@ public class MainActivity extends Activity {
 		return true;
 	}
 
+	/**
+	 * Callback for selecting a menu item.
+	 * @param item
+	 * @return
+	 */
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// Handle item selection
@@ -146,11 +195,22 @@ public class MainActivity extends Activity {
 	}
 
 
-	void showError(String message) {
+	private void showError(String message) {
 		errorDialog.setMessage(message);
 		errorDialog.show();
 	}
 
+	class Listener implements BananaListener {
+
+		@Override
+		public void processBanana(int type, String msg) {
+
+		}
+	}
+
+	/**
+	 * Server commands!
+	 */
 
 	private void commandGetBanana() {
 		setState(HAVE_BANANA);
@@ -158,6 +218,11 @@ public class MainActivity extends Activity {
 
 	private void commandReleaseBanana() {
 		setState(HAVE_NO_BANANA);
+
+	}
+
+	private void commandContinueBogarting() {
+		setState(BOGARTING_BANANA);
 
 	}
 

@@ -4,4 +4,5 @@
     <string name="banana_get">Get Banana</string>
     <string name="banana_release">Release Banana</string>
     <string name="menuitem_userid">Set user id</string>
+    <string name="server_url">http://build.rex.digitalfoundry.com:8417</string>
 </resources>
