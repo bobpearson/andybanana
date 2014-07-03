@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AndyBanana</string>
+    <string name="banana_get">Get Banana</string>
+    <string name="banana_release">Release Banana</string>
+    <string name="menuitem_userid">Set user id</string>
+</resources>
