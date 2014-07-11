@@ -17,57 +17,105 @@ public class BananaClient {
 	private MainActivity par;
 	private ArrayList<BananaListener> listeners;
 	private boolean keepGoing;
+	private String user;
 
-	public BananaClient(MainActivity par, String serverUrl) {
+	public BananaClient(MainActivity par, String serverUrl, String user) {
 
 		this.par = par;
 		this.serverUrl = serverUrl;
+		this.user = user;
 		listeners = new ArrayList<BananaListener>();
 
+	}
+
+	private void error(String msg) {
+		dispatchEvent(new BananaEvent(BananaEvent.ERROR, msg));
+	}
+
+	private void status(String msg) {
+		dispatchEvent(new BananaEvent(BananaEvent.STATUS, msg));
+	}
+
+	void dispatchEvent(BananaEvent evt) {
+		for (BananaListener listener : listeners) {
+			listener.processBanana(evt);
+		}
 	}
 
 	public void addListener(BananaListener listener) {
 		listeners.add(listener);
 	}
 
-	String getText(String command, String user) {
+	private void parse(String command, String result) {
 
-		String res = "";
+		if ("status".equals(command)) {
+			dispatchEvent(new BananaEvent(BananaEvent.STATUS, result));
+		} else if ("take".equals(command)) {
+
+		} else if ("steal".equals(command)) {
+
+		} else if ("release".equals(command)) {
+
+		} else if ("bogart".equals(command)) {
+
+		} else {
+			//duh!
+		}
+
+	}
+
+	private  void doCommand(String command) {
 		try {
 			String urlStr = serverUrl + "/" + command + "?" + "username=" + user;
 			URL url = new URL(urlStr);
 			URLConnection conn = url.openConnection();
 			BufferedReader ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			res = ins.readLine();
+			String res = ins.readLine();
 			ins.close();
+			parse(command, res);
 		} catch (MalformedURLException e) {
-			par.status(e.toString());
+			error(e.toString());
 		} catch (IOException e) {
-			par.status(e.toString());
+			error(e.toString());
 		}
-		return res;
 	}
 
-	void dispatchEvent(int type, String msg) {
-		for (BananaListener listener : listeners) {
-			listener.processBanana(type, msg);
-		}
+
+	void commandTakeBanana() {
+		doCommand("take");
 	}
+
+	void commandStealBanana() {
+		doCommand("steal");
+	}
+
+	void commandReleaseBanana() {
+		doCommand("release");
+	}
+
+	void commandContinueBogarting() {
+		doCommand("bogart");
+	}
+
+
 
 	public boolean start() {
-		keepGoing = true;
-		while (keepGoing) {
-			String res = getText("status", "bob");
-			if (res.length() > 0) {
-				par.status(res);
-				try {
-					Thread.sleep(10000);
-				} catch (InterruptedException e) {
+		Thread t = new Thread("bananaclient-thread") {
+			@Override
+			public void run() {
+				keepGoing = true;
+				while (keepGoing) {
+					doCommand("status");
+					try {
+						Thread.sleep(10000);
+					} catch (InterruptedException e) {
+						error("poll thread");
+					}
 
 				}
 			}
-
-		}
+		};
+		t.start();
 		return true;
 	}
 

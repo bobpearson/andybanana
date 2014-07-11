@@ -5,6 +5,6 @@ package com.pearson.qiactive.tools;
  */
 public interface BananaListener {
 
-	public void processBanana(int type, String msg);
+	public void processBanana(BananaEvent evt);
 
 }

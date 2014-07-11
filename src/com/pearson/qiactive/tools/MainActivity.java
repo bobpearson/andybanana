@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -19,9 +20,8 @@ import android.widget.TextView;
 /**
  * VirtualBanana core client code
  */
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements BananaListener {
 
-	private EditText useridText;
 	private TextView statusText;
 	private String userid;
 	private Button getButton;
@@ -29,6 +29,9 @@ public class MainActivity extends Activity {
 	private final static String APPNAME = "AndyBanana";
 	private Bananimator bananimator;
 	private AlertDialog userDialog;
+	private AlertDialog takeDialog;
+	private AlertDialog stealDialog;
+	private AlertDialog bogartDialog;
 	private AlertDialog errorDialog;
 	private BananaClient client;
 
@@ -69,13 +72,10 @@ public class MainActivity extends Activity {
 		statusText = (TextView) findViewById(R.id.status_text);
 		bananimator = new Bananimator();
 		String url = getString(R.string.server_url);
-		client = new BananaClient(this, url);
-		client.addListener(new Listener());
-		client.start();
 		getButton = (Button) findViewById(R.id.banana_get);
 		getButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				commandGetBanana();
+				commandTakeBanana();
 			}
 		});
 		releaseButton = (Button) findViewById(R.id.banana_release);
@@ -84,41 +84,104 @@ public class MainActivity extends Activity {
 				commandReleaseBanana();
 			}
 		});
-		useridText = new EditText(this);
-		useridText.setHint("set your userid here");
 		setUserId("");
 		createDialogs();
 		userDialog.show();
+		client = new BananaClient(this, url, userid);
+		client.addListener(this);
+		client.start();
 	}
+
 
 	/**
 	 * Generate the dialogs once, else you can have multi-parent problems
 	 */
 	private void createDialogs() {
-		AlertDialog.Builder bldr1 = new AlertDialog.Builder(this);
-		bldr1.setTitle("Enter user id");
-		bldr1.setMessage("Who wants to take the banana?");
-		bldr1.setView(useridText);
-		bldr1.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+		AlertDialog.Builder bldr = new AlertDialog.Builder(this);
+		bldr.setTitle("Enter user id");
+		bldr.setMessage("Who wants to take the banana?");
+		final EditText useridText = new EditText(this);
+		useridText.setMaxLines(1);
+		useridText.setLines(1);
+		useridText.setSingleLine(true);
+		useridText.setHint("set your userid here");
+		bldr.setView(useridText);
+		bldr.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int whichButton) {
 				String id = useridText.getText().toString();
 				setUserId(id);
 			}
 		});
-		bldr1.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+		bldr.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int whichButton) {
 			}
 		});
-		userDialog = bldr1.create();
+		userDialog = bldr.create();
 
-		AlertDialog.Builder bldr2 = new AlertDialog.Builder(this);
-		bldr2.setTitle("Bad banana");
-		bldr2.setMessage("");
-		errorDialog = bldr2.create();
+		bldr = new AlertDialog.Builder(this);
+		bldr.setTitle("Bad banana");
+		bldr.setMessage("");
+		errorDialog = bldr.create();
+
+		bldr = new AlertDialog.Builder(this);
+		bldr.setTitle("Take!");
+		bldr.setMessage("Do you want to take the banana?");
+		bldr.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+				commandTakeBanana();
+			}
+		});
+		bldr.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+			}
+		});
+		takeDialog = bldr.create();
+
+		bldr = new AlertDialog.Builder(this);
+		bldr.setTitle("Steal!");
+		bldr.setMessage("Do you want to steal the banana?");
+		bldr.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+				commandStealBanana();
+			}
+		});
+		bldr.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+			}
+		});
+		stealDialog = bldr.create();
+
+		bldr = new AlertDialog.Builder(this);
+		bldr.setTitle("Bogart!");
+		bldr.setMessage("Keep bogarting the banana?");
+		bldr.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+				commandContinueBogarting();
+			}
+		});
+		bldr.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int whichButton) {
+			}
+		});
+		bogartDialog = bldr.create();
+
 	}
 
-	public void status(String msg) {
-		statusText.setText(msg);
+	void error(String msg) {
+		Log.e("banana", msg);
+	}
+
+	void trace(String msg) {
+		Log.i("banana", msg);
+	}
+
+
+	public void status(final String msg) {
+		runOnUiThread(new Runnable() {
+			public void run() {
+				statusText.setText(msg);
+			}
+		});
 	}
 
 	/**
@@ -126,7 +189,7 @@ public class MainActivity extends Activity {
 	 */
 	private void setUserId(String id) {
 		id = id.trim();
-		if (id.length() > 0) {
+		if (id.matches("^[A-Za-z][A-Za-z0-9]{3,10}$")) {
 			setState(HAVE_NO_BANANA);
 			userid = id;
 			setTitle(APPNAME + " - " + id);
@@ -200,10 +263,14 @@ public class MainActivity extends Activity {
 		errorDialog.show();
 	}
 
-	class Listener implements BananaListener {
-
-		@Override
-		public void processBanana(int type, String msg) {
+	public void processBanana(BananaEvent evt) {
+		switch (evt.getType()) {
+			case BananaEvent.ERROR :
+				error(evt.getMessage());
+				break;
+			case BananaEvent.STATUS:
+				status(evt.getMessage());
+			default:
 
 		}
 	}
@@ -212,18 +279,21 @@ public class MainActivity extends Activity {
 	 * Server commands!
 	 */
 
-	private void commandGetBanana() {
-		setState(HAVE_BANANA);
+	private void commandTakeBanana() {
+		takeDialog.show();
+	}
+
+	private void commandStealBanana() {
+		stealDialog.show();
 	}
 
 	private void commandReleaseBanana() {
-		setState(HAVE_NO_BANANA);
+		client.commandReleaseBanana();
 
 	}
 
 	private void commandContinueBogarting() {
-		setState(BOGARTING_BANANA);
-
+		bogartDialog.show();
 	}
 
 

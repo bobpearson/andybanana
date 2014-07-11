@@ -15,7 +15,7 @@
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Banana delivery system ready"
             android:id="@+id/status_text" android:layout_gravity="center_horizontal" android:layout_weight="0.59"
-            android:textAlignment="center"/>
+            android:gravity="center"/>
     <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
