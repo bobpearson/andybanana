@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AndyBanana</string>
-    <string name="banana_get">Get Banana</string>
-    <string name="banana_release">Release Banana</string>
+    <string name="banana_get">Take</string>
+    <string name="banana_release">Release</string>
+    <string name="banana_bogart">Bogart</string>
+    <string name="banana_steal">Steal</string>
     <string name="menuitem_userid">Set user id</string>
     <string name="server_url">http://build.rex.digitalfoundry.com:8417</string>
 </resources>

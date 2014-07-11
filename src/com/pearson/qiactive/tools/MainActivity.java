@@ -26,6 +26,8 @@ public class MainActivity extends Activity implements BananaListener {
 	private String userid;
 	private Button getButton;
 	private Button releaseButton;
+	private Button bogartButton;
+	private Button stealButton;
 	private final static String APPNAME = "AndyBanana";
 	private Bananimator bananimator;
 	private AlertDialog userDialog;
@@ -80,6 +82,18 @@ public class MainActivity extends Activity implements BananaListener {
 		});
 		releaseButton = (Button) findViewById(R.id.banana_release);
 		releaseButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				commandReleaseBanana();
+			}
+		});
+		bogartButton = (Button) findViewById(R.id.banana_bogart);
+		bogartButton.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View v) {
+				commandReleaseBanana();
+			}
+		});
+		stealButton = (Button) findViewById(R.id.banana_steal);
+		stealButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				commandReleaseBanana();
 			}
@@ -202,21 +216,29 @@ public class MainActivity extends Activity implements BananaListener {
 		switch (stateId) {
 			case CANT_GET_BANANA:
 				getButton.setEnabled(false);
+				bogartButton.setEnabled(false);
+				stealButton.setEnabled(false);
 				releaseButton.setEnabled(false);
 				bananimator.stop();
 				break;
 			case HAVE_NO_BANANA:
 				getButton.setEnabled(true);
+				bogartButton.setEnabled(false);
+				stealButton.setEnabled(true);
 				releaseButton.setEnabled(false);
 				bananimator.stop();
 				break;
 			case HAVE_BANANA:
 				getButton.setEnabled(false);
+				bogartButton.setEnabled(true);
+				stealButton.setEnabled(false);
 				releaseButton.setEnabled(true);
 				bananimator.start();
 				break;
 			case BOGARTING_BANANA:
 				getButton.setEnabled(false);
+				bogartButton.setEnabled(false);
+				stealButton.setEnabled(false);
 				releaseButton.setEnabled(true);
 				break;
 			default:

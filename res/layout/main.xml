@@ -6,22 +6,48 @@
               android:weightSum="1">
     <ImageView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="0.5"
             android:id="@+id/banana_image" android:src="@drawable/ab0" android:layout_gravity="center_horizontal"
             android:background="@color/bana_img_bg"/>
     <TextView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="0.3"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Banana delivery system ready"
-            android:id="@+id/status_text" android:layout_gravity="center_horizontal" android:layout_weight="0.59"
+            android:id="@+id/status_text"
+            android:layout_gravity="center_horizontal"
             android:gravity="center"/>
-    <Button
+    <LinearLayout
+            android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/banana_get"
-            android:id="@+id/banana_get" android:textAlignment="center"/>
-    <Button android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/banana_release"
-            android:id="@+id/banana_release" android:layout_gravity="center_horizontal"/>
+            android:layout_height="0dp"
+            android:layout_weight="0.2">
+        <Button
+                android:layout_width="0dp"
+                android:layout_weight="0.25"
+                android:layout_height="match_parent"
+                android:text="@string/banana_get"
+                android:id="@+id/banana_get"/>
+        <Button
+                android:layout_width="0dp"
+                android:layout_weight="0.25"
+                android:layout_height="match_parent"
+                android:text="@string/banana_release"
+                android:id="@+id/banana_release"/>
+        <Button
+                android:layout_width="0dp"
+                android:layout_weight="0.25"
+                android:layout_height="match_parent"
+                android:text="@string/banana_steal"
+                android:id="@+id/banana_steal"/>
+        <Button
+                android:layout_width="0dp"
+                android:layout_weight="0.25"
+                android:layout_height="match_parent"
+                android:text="@string/banana_bogart"
+                android:id="@+id/banana_bogart"/>
+    </LinearLayout>
 </LinearLayout>
 

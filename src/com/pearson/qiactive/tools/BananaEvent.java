@@ -12,6 +12,7 @@ public class BananaEvent {
 	public final static int STEAL = 5;
 	public final static int RELEASE = 6;
 
+	private int type;
 	private String message = "";
 
 

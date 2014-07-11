@@ -69,7 +69,7 @@ public class BananaClient {
 			String urlStr = serverUrl + "/" + command + "?" + "username=" + user;
 			URL url = new URL(urlStr);
 			URLConnection conn = url.openConnection();
-			BufferedReader ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			BufferedReader ins = new BufferedReader(new InputStreamReader(conn.getInputStream()), 1024);
 			String res = ins.readLine();
 			ins.close();
 			parse(command, res);
