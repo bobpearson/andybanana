@@ -50,19 +50,26 @@ public class MainActivity extends Activity implements BananaListener {
 	/**
 	 * Client can grab the banana but currently isn't holding it
 	 */
-	private final static int HAVE_NO_BANANA = 1;
+	private final static int NOBODY_HAS_BANANA = 1;
 
 	/**
-	 * Client currently has the banana
+	 * I currently have the banana
 	 */
 	private final static int HAVE_BANANA = 2;
 
 	/**
+	 *
+	 */
+	private final static int SOMEONE_ELSE_BANANA = 3;
+
+	/**
 	 * Client still has the banana after a long time (20mins?).  Superstate of HAVE_BANANA
 	 */
-	private final static int BOGARTING_BANANA = 3;
+	private final static int BOGARTING_BANANA = 4;
 
 	private int state;
+	String url;
+	String devurl;
 
 	/**
 	 * Called when the activity is first created.
@@ -73,11 +80,13 @@ public class MainActivity extends Activity implements BananaListener {
 		setContentView(R.layout.main);
 		statusText = (TextView) findViewById(R.id.status_text);
 		bananimator = new Bananimator();
-		String url = getString(R.string.server_url);
+		url = getResources().getString(R.string.server_url);
+		devurl = getResources().getString(R.string.dev_server_url);
+		createDialogs();
 		getButton = (Button) findViewById(R.id.banana_get);
 		getButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				commandTakeBanana();
+				takeDialog.show();
 			}
 		});
 		releaseButton = (Button) findViewById(R.id.banana_release);
@@ -89,21 +98,19 @@ public class MainActivity extends Activity implements BananaListener {
 		bogartButton = (Button) findViewById(R.id.banana_bogart);
 		bogartButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				commandReleaseBanana();
+				bogartDialog.show();
 			}
 		});
 		stealButton = (Button) findViewById(R.id.banana_steal);
 		stealButton.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
-				commandReleaseBanana();
+				stealDialog.show();
 			}
 		});
 		setUserId("");
-		createDialogs();
-		userDialog.show();
-		client = new BananaClient(this, url, userid);
+		client = new BananaClient(this, devurl, userid);
 		client.addListener(this);
-		client.start();
+		userDialog.show();
 	}
 
 
@@ -168,7 +175,7 @@ public class MainActivity extends Activity implements BananaListener {
 		bldr = new AlertDialog.Builder(this);
 		bldr.setTitle("Bogart!");
 		bldr.setMessage("Keep bogarting the banana?");
-		bldr.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+		AlertDialog.Builder ok = bldr.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int whichButton) {
 				commandContinueBogarting();
 			}
@@ -203,17 +210,21 @@ public class MainActivity extends Activity implements BananaListener {
 	 */
 	private void setUserId(String id) {
 		id = id.trim();
-		if (id.matches("^[A-Za-z][A-Za-z0-9]{3,10}$")) {
-			setState(HAVE_NO_BANANA);
+		if (id.matches("^[A-Za-z][A-Za-z0-9]{2,10}$")) {
+			setState(NOBODY_HAS_BANANA);
 			userid = id;
 			setTitle(APPNAME + " - " + id);
+			client.stop();
+			client = new BananaClient(this, devurl, userid);
+			client.addListener(this);
+			client.start();
 		} else {
 			setState(CANT_GET_BANANA);
 		}
 	}
 
-	private void setState(int stateId) {
-		switch (stateId) {
+	private void adjustButtons() {
+		switch (state) {
 			case CANT_GET_BANANA:
 				getButton.setEnabled(false);
 				bogartButton.setEnabled(false);
@@ -221,10 +232,10 @@ public class MainActivity extends Activity implements BananaListener {
 				releaseButton.setEnabled(false);
 				bananimator.stop();
 				break;
-			case HAVE_NO_BANANA:
+			case NOBODY_HAS_BANANA:
 				getButton.setEnabled(true);
 				bogartButton.setEnabled(false);
-				stealButton.setEnabled(true);
+				stealButton.setEnabled(false);
 				releaseButton.setEnabled(false);
 				bananimator.stop();
 				break;
@@ -235,15 +246,32 @@ public class MainActivity extends Activity implements BananaListener {
 				releaseButton.setEnabled(true);
 				bananimator.start();
 				break;
+			case SOMEONE_ELSE_BANANA:
+				getButton.setEnabled(false);
+				bogartButton.setEnabled(false);
+				stealButton.setEnabled(true);
+				releaseButton.setEnabled(false);
+				bananimator.stop();
 			case BOGARTING_BANANA:
 				getButton.setEnabled(false);
 				bogartButton.setEnabled(false);
 				stealButton.setEnabled(false);
 				releaseButton.setEnabled(true);
+				bananimator.stop();
 				break;
 			default:
 		}
+
+	}
+
+	private void setState(int stateId) {
+		Log.i("state:", ""+stateId);
 		state = stateId;
+		runOnUiThread(new Runnable() {
+			public void run() {
+				adjustButtons();
+			}
+		});
 	}
 
 	/**
@@ -268,7 +296,7 @@ public class MainActivity extends Activity implements BananaListener {
 		// Handle item selection
 		switch (item.getItemId()) {
 			case R.id.menuitem_userid:
-				if (state == CANT_GET_BANANA || state == HAVE_NO_BANANA) {
+				if (state == CANT_GET_BANANA || state == NOBODY_HAS_BANANA) {
 					userDialog.show();
 				} else {
 					showError("I won't let you change your name whilst holding the banana!");
@@ -286,12 +314,37 @@ public class MainActivity extends Activity implements BananaListener {
 	}
 
 	public void processBanana(BananaEvent evt) {
+		String msg = evt.getMessage().trim();
 		switch (evt.getType()) {
 			case BananaEvent.ERROR :
-				error(evt.getMessage());
+				error(msg);
 				break;
 			case BananaEvent.STATUS:
-				status(evt.getMessage());
+				status(msg);
+				if (state == CANT_GET_BANANA)
+					return;
+				if (msg.startsWith("Nobody")) {
+					setState(NOBODY_HAS_BANANA);
+				} else if (msg.startsWith(userid)) {
+					setState(HAVE_BANANA);
+				} else if (msg.indexOf(" has ") >= 0) {
+					setState(SOMEONE_ELSE_BANANA);
+				}
+                break;
+			case BananaEvent.TAKE:
+				String id = msg;
+				if (msg.equalsIgnoreCase(userid)) {
+					status("You took the banana!");
+					setState(HAVE_BANANA);
+				} else {
+					status(id + " took the banana!");
+					setState(SOMEONE_ELSE_BANANA);
+				}
+				break;
+			case BananaEvent.RELEASE:
+				status("You released the banana!");
+				setState(NOBODY_HAS_BANANA);
+				break;
 			default:
 
 		}
@@ -302,27 +355,25 @@ public class MainActivity extends Activity implements BananaListener {
 	 */
 
 	private void commandTakeBanana() {
-		takeDialog.show();
+		client.commandTakeBanana();
 	}
 
 	private void commandStealBanana() {
-		stealDialog.show();
+		client.commandStealBanana();
 	}
 
 	private void commandReleaseBanana() {
 		client.commandReleaseBanana();
-
 	}
 
 	private void commandContinueBogarting() {
-		bogartDialog.show();
+		client.commandContinueBogarting();
 	}
 
 
 	/**
 	 *
 	 */
-
 	class Bananimator {
 
 

@@ -1,5 +1,7 @@
 package com.pearson.qiactive.tools;
 
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -48,16 +50,18 @@ public class BananaClient {
 
 	private void parse(String command, String result) {
 
+		Log.i("client string", result);
+
 		if ("status".equals(command)) {
 			dispatchEvent(new BananaEvent(BananaEvent.STATUS, result));
 		} else if ("take".equals(command)) {
-
+			dispatchEvent(new BananaEvent(BananaEvent.STATUS, result));
 		} else if ("steal".equals(command)) {
-
+			dispatchEvent(new BananaEvent(BananaEvent.STEAL, result));
 		} else if ("release".equals(command)) {
-
+			dispatchEvent(new BananaEvent(BananaEvent.RELEASE, result));
 		} else if ("bogart".equals(command)) {
-
+			dispatchEvent(new BananaEvent(BananaEvent.BOGART, result));
 		} else {
 			//duh!
 		}
